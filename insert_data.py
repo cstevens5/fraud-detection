@@ -1,5 +1,6 @@
 import pandas as pd
 import psycopg2
+import os
 
 # connect to the database
 conn = psycopg2.connect(
@@ -17,30 +18,30 @@ cur.execute('''
     CREATE TABLE IF NOT EXISTS transactions (
         ssn VARCHAR(255),
         cc_num VARCHAR(255),
-        first_name VARCHAR(255),
-        last_name VARCHAR(255),
+        first VARCHAR(255),
+        last VARCHAR(255),
         gender CHAR(1),
         street VARCHAR(255),
         city VARCHAR(255),
         state CHAR(2),
-        zipcode VARCHAR(255),
-        latitude FLOAT(8),
-        longitude FLOAT(8),
-        city_population INTEGER,
+        zip VARCHAR(255),
+        lat FLOAT(8),
+        long FLOAT(8),
+        city_pop INTEGER,
         job VARCHAR(255),
-        date_of_birth DATE,
-        account_num VARCHAR(255),
+        dob DATE,
+        acct_num VARCHAR(255),
         profile VARCHAR(255),
-        transaction_num VARCHAR(255),
-        transaction_date DATE,
-        transaction_time TIME,
+        trans_num VARCHAR(255),
+        trans_date DATE,
+        trans_time TIME,
         unix_time VARCHAR(255),
         category VARCHAR(255),
-        amount FLOAT(8),
-        is_fraud BOOLEAN,
+        amt FLOAT(8),
+        is_fraud CHAR(1),
         merchant VARCHAR(255),
-        merchant_latitude FLOAT(8),
-        merchant_longitude FLOAT(8)
+        merch_lat FLOAT(8),
+        merch_long FLOAT(8)
     );
 ''')
 
@@ -88,7 +89,6 @@ files = [
     'adults_50up_male_urban_4-5.csv',
     'adults_50up_male_urban_6-7.csv',
     'adults_50up_male_urban_8-9.csv',
-    'customers.csv',
     'young_adults_female_rural_0-1.csv',
     'young_adults_female_rural_2-3.csv',
     'young_adults_female_rural_4-5.csv',
@@ -111,19 +111,28 @@ files = [
     'young_adults_male_urban_8-9.csv'
 ]
 
+# list of all of the required columns
+required_columns = ['ssn', 'cc_num', 'first', 'last', 'gender', 'street', 'city', 'state', 'zip', 'lat', 'long', 'city_pop', 'job', 'dob', 'acct_num', 'profile', 'trans_num', 'trans_date', 'trans_time', 'unix_time', 'category', 'amt', 'is_fraud', 'merchant', 'merch_lat', 'merch_long']
+
 # loop through all of the files and insert the data
 for file in files:
     # convert csv file to a data frame
-    df = pd.read_csv(f'/training_data/{file}')
+    df = pd.read_csv(os.path.join('training_data', file), sep='|')
+
+    # ensure the data frame includes all of the required columns
+    # even if some are empty
+    df = df[required_columns]
     
     # convert the data frame into a list of tuples - each tuple
     # represents a single row of data
     rows = [tuple(row) for row in df.to_numpy()]
 
-    cur.executemany('''
-        INSERT INTO fraud_detection (ssn, cc_num, first_name, last_name, gender, street, city, state, zipcode, latitude, longitude, city_population, job, date_of_birth, account_num, profile, transaction_num, transaction_date, transaction_time, unix_time, category, is_fraud, merchant, merchant_latitude, merchant_longitude)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
-    ''')
+    if len(rows) > 0:
+        print(file)
+        cur.executemany('''
+            INSERT INTO transactions (ssn, cc_num, first, last, gender, street, city, state, zip, lat, long, city_pop, job, dob, acct_num, profile, trans_num, trans_date, trans_time, unix_time, category, amt, is_fraud, merchant, merch_lat, merch_long)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+        ''', rows)
 
 
 # commit changes
