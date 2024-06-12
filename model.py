@@ -32,13 +32,34 @@ df = df.fillna(0)
 # convert the target variable (is_fraud) to a numeric value
 df['is_fraud'] = df['is_fraud'].astype(int)
 
-# define target and features
-target = 'is_fraud'
-x = df.drop(columns=[target])
-y = df[target]
+# initialize empty lists to hold training and testing data
+train_list = []
+test_list = []
 
-# identify numerical and categorical features
-numerical_features = X.select_dtypes(include=['int64', 'float64']).columns.tolist()
-categorical_features = X.select_dtypes(include=['object', 'category', 'bool']).columns.tolist()
+# group the data by account number
+grouped = df.groupby('acct_num')
 
+# iterate through each account and split it's transactions
+for acct_num, group in grouped:
+    train, test = train_test_split(group, test_size=0.3, random_state=42, stratify=group['is_fraud'])
+    train_list.append(train)
+    test_list.append(test)
+
+# combine all training sets and testing sets
+train_df = pd.concat(train_list)
+test_df = pd.concat(test_list)
+
+# separate features and target variable
+x_train = train_df.drop('is_fraud', axis=1)
+y_train = train_df['is_fraud']
+x_test = test_df.drop('is_fraud', axis=1)
+y_test = test_df['is_fraud']
+
+# drop columns here that are not features or not relevant to the model
+# right now we will train on all columns and then tune the model based
+# on each columns relevance to the model
+
+# train the logistic regression model
+model = LogisticRegression(max_iter=10000)
+model.fit(x_train, y_train)
 
