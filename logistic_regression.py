@@ -50,11 +50,6 @@ for acct_num, group in grouped:
 train_df = pd.concat(train_list)
 test_df = pd.concat(test_list)
 
-# Exclude irrelevant columns
-#irrelevant_columns = [
-#    'ssn', 'cc_num', 'first', 'last', 'gender', 'street', 'zip', 'unix_time', 
-#    'merchant', 'profile', 'trans_num', 'trans_date', 'trans_time', 'acct_num'
-#]
 x_train = train_df.drop(columns=['is_fraud'])
 y_train = train_df['is_fraud']
 x_test = test_df.drop(columns=['is_fraud'])
@@ -71,12 +66,6 @@ preprocessor = ColumnTransformer(
         ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_cols)
     ])
 
-# weights for the weighted logistic regression - calculated using a formula for the weights
-#weights = {0: 0.502, 1: 137}
-
-# apply RandomUnderSampler to handle the class imbalance
-#x_train_res, y_train_res = RandomUnderSampler(random_state=42).fit_resample(x_train, y_train)
-
 # Create a pipeline that first transforms the data and then applies the logistic regression model
 model_pipeline = Pipeline(steps=[
     ('preprocessor', preprocessor),
@@ -89,10 +78,6 @@ model_pipeline.fit(x_train, y_train)
 
 # Make predictions on the test set
 y_pred = model_pipeline.predict(x_test)
-
-# Compare predictions with actual values
-#results = pd.DataFrame({'Actual': y_test, 'Predicted': y_pred})
-#print(results.head())
 
 # Evaluate the model
 accuracy = accuracy_score(y_test, y_pred)
